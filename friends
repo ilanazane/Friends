@@ -1,0 +1,248 @@
+package friends;
+
+import structures.Queue;
+import structures.Stack;
+
+import java.util.*;
+
+
+public class Friends {
+
+	/**
+	 * Finds the shortest chain of people from p1 to p2.
+	 * Chain is returned as a sequence of names starting with p1,
+	 * and ending with p2. Each pair (n1,n2) of consecutive names in
+	 * the returned chain is an edge in the graph.
+	 * 
+	 * @param g Graph for which shortest chain is to be found.
+	 * @param p1 Person with whom the chain originates
+	 * @param p2 Person at whom the chain terminates
+	 * @return The shortest chain from p1 to p2. Null if there is no
+	 *         path from p1 to p2
+	 */
+	public static ArrayList<String> shortestChain(Graph g, String p1, String p2) {
+		//create new queue 
+		
+		// keep track of person previously visited 
+		Queue<Person>que=new Queue<>();
+		boolean[] ifvisited= new boolean [g.members.length];
+		int[] prevvisit= new int[g.members.length];
+		
+		Person firstp=g.members[g.map.get(p1)];
+		Person targetp=g.members[g.map.get(p2)];
+	
+		//boolean to find if target has been visited 
+		boolean iffound=false; 
+		
+		//check this statement 
+		for(int i=0; i<prevvisit.length;i++){
+			prevvisit[i]=-1;
+		}
+		//add first person to the que 
+		que.enqueue(firstp);
+		
+		//while queue is empty the target has not been found 
+		while(que.isEmpty()==false){
+			Person current= que.dequeue();
+			if(current==targetp){
+				iffound=true; 
+				break;
+			}
+			int name=g.map.get(current.name);
+			ifvisited[name]=true; 
+			
+			Friend friendptr=g.members[name].first;
+			while(friendptr!=null){
+				
+				if(ifvisited[friendptr.fnum]==false){
+					que.enqueue(g.members[friendptr.fnum]);
+					prevvisit[friendptr.fnum]=name;
+					
+					ifvisited[friendptr.fnum]=true; 
+					}
+					friendptr=friendptr.next;
+				}
+			}
+		
+		if(!iffound)
+				return null;
+		
+		Stack <String> stack=new Stack<>();
+		int targetnumber=g.map.get(targetp.name);
+		int previousnumber=prevvisit[targetnumber];
+		stack.push(targetp.name);
+		
+		while(previousnumber!=-1){
+			stack.push(g.members[previousnumber].name);
+			previousnumber=prevvisit[previousnumber];
+		}
+		
+		
+		ArrayList<String> array=new ArrayList<>();
+		
+			while(!stack.isEmpty()){
+				array.add(stack.pop());
+			}
+		return array; 
+		
+		
+}
+	
+	/**
+	 * Finds all cliques of students in a given school.
+	 * 
+	 * Returns an array list of array lists - each constituent array list contains
+	 * the names of all students in a clique.
+	 * 
+	 * @param g Graph for which cliques are to be found.
+	 * @param school Name of school
+	 * @return Array list of clique array lists. Null if there is no student in the
+	 *         given school
+	 */
+	public static ArrayList<ArrayList<String>> cliques(Graph g, String school) {
+		
+	ArrayList<ArrayList<String>> array= new ArrayList<ArrayList<String>>();
+	
+	boolean[] ifvisited=new boolean[g.members.length];
+	
+	for(int i=0; i<g.members.length;i++){
+		
+		ArrayList<String> xyz= new ArrayList<String>(); 
+		Person current=g.members[i];
+		int currentname=g.map.get(current.name);
+		
+		if(current.school==null){
+			continue;
+		}
+		
+		if(current.school.equals(school)&&ifvisited[currentname]==false){
+			checkClique(g,school,current, ifvisited, xyz);
+			
+			array.add(xyz);
+		}
+	}return array; 
+	
+	}
+		
+		
+		
+	private static void checkClique (Graph g, String school, Person person, boolean[] ifvisited, ArrayList<String>array){
+			Queue<Person> que=new Queue<>();
+			
+			que.enqueue(person);
+			
+			while(que.isEmpty()==false){
+				
+				Person current=que.dequeue();
+				array.add(current.name);
+				
+				int currentname=g.map.get(current.name);
+				ifvisited[currentname]=true; 
+				
+				Friend fptr= g.members[currentname].first;
+				
+				while(fptr!=null){
+					
+					String fschool= g.members[fptr.fnum].school;
+					if(fschool==null){
+						
+					
+					fptr=fptr.next;
+					
+					continue; 
+				}
+				
+				if(ifvisited[fptr.fnum]==false&& fschool.equals(school)){
+				
+					que.enqueue(g.members[fptr.fnum]);
+					
+					//mark visited
+					ifvisited[fptr.fnum]=true; 
+				}
+				
+				fptr=fptr.next;
+			}
+		}
+	}
+		
+	
+		
+	
+	
+	
+	
+	/**
+	 * Finds and returns all connectors in the graph.
+	 * 
+	 * @param g Graph for which connectors needs to be found.
+	 * @return Names of all connectors. Null if there are no connectors.
+	 */
+	public static ArrayList<String> connectors(Graph g) {
+		
+		ArrayList<String>cons=new ArrayList<>();
+		
+		int x=g.members.length;
+		boolean[] ifvisited=new boolean[x];
+		int[] dfsnum=new int[x];
+		int[]back=new int[x];
+		boolean[] backed=new boolean[x];
+		
+		for(int i=0;i<x;i++){
+			if(!ifvisited[i]){
+				connector(g,i, ifvisited, dfsnum, back, i, cons,
+						backed,i);
+			}
+		}
+			return cons;
+		}
+		
+		
+		
+		
+		private static void connector(Graph g, int current, boolean[] ifvisited, int[] dfsnum, 
+										int back[], int prev, ArrayList<String> cons, boolean[] backed, int start){
+			
+		if(ifvisited[current]){
+			return;
+		}
+			ifvisited[current]=true;
+			dfsnum[current]=dfsnum[prev]+1;
+			back[current]=dfsnum[current];
+			
+			//first friend of current 
+			
+			Friend fptr=g.members[current].first;
+			while(fptr!=null){
+				
+				if(ifvisited[fptr.fnum]){
+					back[current]=Math.min(back[current],dfsnum[fptr.fnum] );
+				}
+				//not visited 
+				
+				else{
+					connector(g, fptr.fnum,ifvisited,dfsnum, back,
+							current, cons, backed, start);
+					
+					if(dfsnum[current]<=back[fptr.fnum]&&!cons.contains(g.members[current].name)){
+						if(current!=start||backed[current]==true){
+							cons.add(g.members[current].name);
+						}
+					}
+					
+					//decrement after backup 
+					if(dfsnum[current]>back[fptr.fnum]){
+						back[current]=Math.min(back[current], back[fptr.fnum]);
+					}
+					
+					backed[current]=true;
+				}
+				
+				fptr=fptr.next;
+					
+			}
+			
+			
+		}
+		
+	}	
+		                                             	
